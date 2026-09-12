@@ -46,7 +46,8 @@ jobs:
           arch: x86_64
           profile: pixel_6
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot -memory 4096 -cores 4
           script: bash tools/shots.sh android/app/build/outputs/apk/release/app-release.apk
 
       - name: Seal the shots

@@ -61,6 +61,14 @@ jobs:
             echo "TEND_KEY_PASSWORD=$KEY_PASSWORD"
           } >> "$GITHUB_ENV"
 
+      - name: 取音色引擎（sherpa-onnx 的安卓预编译包）
+        working-directory: android
+        run: |
+          mkdir -p app/libs
+          curl -fsSL -o app/libs/sherpa-onnx.aar \
+            https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-1.13.8.aar
+          ls -l app/libs
+
       - name: Build release apk
         working-directory: android
         run: gradle assembleRelease --no-daemon --stacktrace

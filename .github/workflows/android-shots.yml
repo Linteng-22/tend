@@ -1,0 +1,63 @@
+name: android-shots
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Unlock source
+        env:
+          TEND_SOURCE_KEY: ${{ secrets.TEND_SOURCE_KEY }}
+        run: node tools/tendpack.js unseal --src enc-android --out android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install SDK platforms
+        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0" > /dev/null
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      # 拍的是 release 那一份——和装到手机上的完全是同一个包，
+      # 不是「开发时看着还行、发出去缩了一圈」那种情况。
+      - name: Build release apk
+        working-directory: android
+        run: gradle assembleRelease --no-daemon
+
+      - name: Take screenshots on an emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash tools/shots.sh android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Seal the shots
+        env:
+          TEND_SOURCE_KEY: ${{ secrets.TEND_SOURCE_KEY }}
+        run: |
+          zip -qr Tend-shots.zip shots
+          node tools/tendpack.js seal-file --in Tend-shots.zip --out Tend-shots.zip.enc
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tend-android-shots-sealed
+          path: Tend-shots.zip.enc
+          retention-days: 14

@@ -2,6 +2,13 @@ name: android-shots
 
 on:
   push:
+    # 改安卓不该把 iOS 那条流水线也叫醒，反之亦然。
+    # 源码是分开封存的，所以按封存目录分流就够准。
+    paths:
+      - 'enc-android/**'
+      - 'tools/tendpack.js'
+      - 'tools/shots.sh'
+      - '.github/workflows/android-shots.yml'
   workflow_dispatch:
 
 jobs:

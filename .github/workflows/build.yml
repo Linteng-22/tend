@@ -2,6 +2,12 @@ name: build
 
 on:
   push:
+    # 改安卓不该把 iOS 那条流水线也叫醒，反之亦然。
+    # 源码是分开封存的，所以按封存目录分流就够准。
+    paths:
+      - 'enc/**'
+      - 'tools/tendpack.js'
+      - '.github/workflows/build.yml'
   workflow_dispatch:
 
 jobs:

@@ -1,0 +1,63 @@
+name: build
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  ios-unsigned-ipa:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 仓库里只有密文。明文到这里才出现在 runner 的工作目录里，
+      # 而且这一层工作目录跑完就被回收，不会被上传。
+      - name: Unlock source
+        env:
+          TEND_SOURCE_KEY: ${{ secrets.TEND_SOURCE_KEY }}
+        run: node tools/tendpack.js unseal --src enc --out src
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: src
+        run: xcodegen generate
+
+      - name: Build (unsigned)
+        working-directory: src
+        run: |
+          xcodebuild \
+            -project Tend.xcodeproj \
+            -scheme Tend \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package unsigned ipa
+        working-directory: src
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/Tend.app Payload/
+          zip -qry Tend-unsigned.ipa Payload
+
+      # 产物也封起来再上传。公开仓库的 artifact 谁都能下，
+      # 而一个没签名的 ipa 别人拿去自己签一下就能装——那等于把 App 送出去了。
+      - name: Seal the ipa
+        env:
+          TEND_SOURCE_KEY: ${{ secrets.TEND_SOURCE_KEY }}
+        run: node tools/tendpack.js seal-file --in src/Tend-unsigned.ipa --out Tend-unsigned.ipa.enc
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tend-ipa-sealed
+          path: Tend-unsigned.ipa.enc
+          retention-days: 14

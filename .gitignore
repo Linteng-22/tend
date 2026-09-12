@@ -1,0 +1,8 @@
+# 口令永远不进仓库
+tools/.tend-key
+*.key
+
+# 本地解开出来的明文，以及往返自测留下的东西
+src/
+_roundtrip/
+_selftest*

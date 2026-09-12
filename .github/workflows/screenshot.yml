@@ -1,0 +1,94 @@
+name: screenshots
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  simulator-screenshots:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Unlock source
+        env:
+          TEND_SOURCE_KEY: ${{ secrets.TEND_SOURCE_KEY }}
+        run: node tools/tendpack.js unseal --src enc --out src
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: src
+        run: xcodegen generate
+
+      - name: Pick an available iPhone simulator
+        id: sim
+        run: |
+          set -euo pipefail
+          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; runs=sorted([r for r in d if 'iOS' in r], reverse=True); print(next(x['udid'] for r in runs for x in d[r] if x['name'].startswith('iPhone')))")
+          if [ -z "$UDID" ]; then
+            echo "没有可用的 iPhone 模拟器"
+            exit 1
+          fi
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Run screenshot UI test
+        working-directory: src
+        run: |
+          xcodebuild test \
+            -project Tend.xcodeproj \
+            -scheme Tend \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath screenshots.xcresult
+
+      - name: Export screenshots
+        working-directory: src
+        run: |
+          mkdir -p shots
+          xcrun xcresulttool export attachments --path screenshots.xcresult --output-path shots
+
+      - name: Give screenshots readable names
+        working-directory: src
+        run: |
+          python3 - <<'PY'
+          import json, os, shutil, pathlib
+
+          shots = pathlib.Path("shots")
+          manifest = shots / "manifest.json"
+          if not manifest.exists():
+              print("没有 manifest.json，保持原样")
+              raise SystemExit(0)
+
+          data = json.loads(manifest.read_text(encoding="utf-8"))
+          named = pathlib.Path("shots-named")
+          named.mkdir(exist_ok=True)
+
+          for entry in data:
+              for item in entry.get("attachments", []):
+                  src = shots / item["exportedFileName"]
+                  label = item.get("suggestedHumanReadableName") or item["exportedFileName"]
+                  label = os.path.basename(label)
+                  if not label.lower().endswith(".png"):
+                      label += ".png"
+                  if src.exists():
+                      shutil.copy(src, named / label)
+          PY
+
+      - name: Seal the screenshots
+        working-directory: src
+        env:
+          TEND_SOURCE_KEY: ${{ secrets.TEND_SOURCE_KEY }}
+        run: |
+          zip -qry shots.zip shots-named
+          node ../tools/tendpack.js seal-file --in shots.zip --out shots.zip.enc
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tend-screenshots-sealed
+          path: src/shots.zip.enc
+          retention-days: 14

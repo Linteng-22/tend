@@ -40,6 +40,26 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
+      # 签名密钥和 android.yml 用同一份，这样拍的就是装到手机上的那个包。
+      - name: 铺签名密钥
+        env:
+          KEYSTORE_BASE64: ${{ secrets.TEND_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.TEND_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.TEND_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.TEND_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "没配签名密钥，这次用 debug key 出包。"
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/tend-release.p12"
+          {
+            echo "TEND_KEYSTORE=$RUNNER_TEMP/tend-release.p12"
+            echo "TEND_STORE_PASSWORD=$STORE_PASSWORD"
+            echo "TEND_KEY_ALIAS=$KEY_ALIAS"
+            echo "TEND_KEY_PASSWORD=$KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
+
       # 拍的是 release 那一份——和装到手机上的完全是同一个包，
       # 不是「开发时看着还行、发出去缩了一圈」那种情况。
       - name: Build release apk

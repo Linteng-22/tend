@@ -1,0 +1,56 @@
+name: genkey
+
+# 只手动触发一次：在 CI 上用官方 keytool 生成安卓签名密钥，
+# 封存后当产物发出来。口令从 Secrets 来，任何一步都不落进仓库和日志。
+#
+# 为什么要走 CI：本机没有 JDK，keytool 出不来。
+# 为什么要用 keytool 而不是别的：apksigner 读它生成的文件一定没问题。
+on:
+  workflow_dispatch:
+
+jobs:
+  key:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 生成签名密钥
+        env:
+          STORE_PASSWORD: ${{ secrets.TEND_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.TEND_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.TEND_KEY_ALIAS }}
+        run: |
+          set -e
+          if [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ]; then
+            echo "::error::缺 TEND_STORE_PASSWORD / TEND_KEY_ALIAS 这两个 secret"
+            exit 1
+          fi
+          rm -f tend-release.p12
+          keytool -genkeypair -v \
+            -keystore tend-release.p12 -storetype PKCS12 \
+            -alias "$KEY_ALIAS" \
+            -keyalg RSA -keysize 4096 -validity 10950 \
+            -storepass "$STORE_PASSWORD" -keypass "$KEY_PASSWORD" \
+            -dname "CN=Tend, O=Tend, C=CN"
+          echo "---- 指纹 ----"
+          keytool -list -v -keystore tend-release.p12 -storepass "$STORE_PASSWORD" | grep -E "SHA256|Alias|Valid"
+
+      - name: 封存
+        env:
+          TEND_SOURCE_KEY: ${{ secrets.TEND_SOURCE_KEY }}
+        run: node tools/tendpack.js seal-file --in tend-release.p12 --out tend-release.p12.enc
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tend-keystore-sealed
+          path: tend-release.p12.enc
+          retention-days: 14

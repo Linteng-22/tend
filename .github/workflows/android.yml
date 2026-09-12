@@ -40,8 +40,27 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
-      # 签名走环境变量；这里没配签名 secret，所以出来的是 debug key 签过的包，自己装机够用。
-      # 要换成自己的签名，就把 keystore 塞进 secrets 再传进来（TEND_KEYSTORE 那四个变量）。
+      # 签名密钥从 secret 里铺到 runner 上，路径经 TEND_KEYSTORE 传给 gradle。
+      # 没配就退回 debug 签名——包照样能装，只是以后换密钥得重装一次。
+      - name: 铺签名密钥
+        env:
+          KEYSTORE_BASE64: ${{ secrets.TEND_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.TEND_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.TEND_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.TEND_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "没配签名密钥，这次用 debug key 出包。"
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/tend-release.p12"
+          {
+            echo "TEND_KEYSTORE=$RUNNER_TEMP/tend-release.p12"
+            echo "TEND_STORE_PASSWORD=$STORE_PASSWORD"
+            echo "TEND_KEY_ALIAS=$KEY_ALIAS"
+            echo "TEND_KEY_PASSWORD=$KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
+
       - name: Build release apk
         working-directory: android
         run: gradle assembleRelease --no-daemon --stacktrace

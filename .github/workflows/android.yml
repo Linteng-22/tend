@@ -1,0 +1,57 @@
+name: android
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  android-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 仓库里只有密文。明文到这一步才出现，跑完随工作目录一起没了。
+      - name: Unlock source
+        env:
+          TEND_SOURCE_KEY: ${{ secrets.TEND_SOURCE_KEY }}
+        run: node tools/tendpack.js unseal --src enc-android --out android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install SDK platforms
+        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0" > /dev/null
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      # 签名走环境变量；这里没配签名 secret，所以出来的是 debug key 签过的包，自己装机够用。
+      # 要换成自己的签名，就把 keystore 塞进 secrets 再传进来（TEND_KEYSTORE 那四个变量）。
+      - name: Build release apk
+        working-directory: android
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      # 产物也封起来再上传。公开仓库的 artifact 谁都能下，
+      # 一个签过名的 apk 被别人拿去反编译、二次分发，那等于把 App 送出去。
+      - name: Seal the apk
+        env:
+          TEND_SOURCE_KEY: ${{ secrets.TEND_SOURCE_KEY }}
+        run: |
+          node tools/tendpack.js seal-file \
+            --in android/app/build/outputs/apk/release/app-release.apk \
+            --out Tend.apk.enc
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tend-apk-sealed
+          path: Tend.apk.enc
+          retention-days: 14

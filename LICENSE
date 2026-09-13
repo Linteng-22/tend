@@ -1,0 +1,44 @@
+Tend 使用许可
+==============
+
+版权所有 (c) 2026 Tend 的作者（GitHub: Linteng-22）。保留所有权利。
+
+一、这个仓库
+
+本仓库不包含源代码。enc/ 与 enc-android/ 目录下是加密的工程文件，
+不授予任何人解密、还原或从其中推导内容与结构的权利。
+
+二、发布在 Releases 中的安装包
+
+在遵守以下条件的前提下，可以免费下载、安装并在自己的设备上使用：
+
+1. 个人使用，不用于商业分发；
+2. 不反编译、不逆向、不修改；
+3. 不把安装包或改过的版本再分发、转卖，或放进别的应用商店；
+4. 不删除、不绕过签名校验和完整性校验。
+
+三、不提供担保
+
+软件按现状提供，不附带任何明示或暗示的担保。使用时产生的后果，
+包括数据丢失、设备异常、第三方服务产生的费用，由使用者自己承担。
+
+四、终止
+
+违反上述任何一条，本许可立即自动终止，需要停止使用并删除已安装的副本。
+
+------------------------------------------------------------------------
+
+English (short version)
+
+Copyright (c) 2026 Tend. All rights reserved.
+
+This repository contains no source code. The encrypted files under enc/ and enc-android/
+may not be decrypted, reverse engineered, or derived from.
+
+Binaries published in Releases may be downloaded, installed and used free of charge on
+your own devices for personal use, provided you do not: decompile, modify or reverse
+engineer them; redistribute or resell them or publish modified builds; remove or bypass
+signature or integrity checks.
+
+The software is provided "as is", without warranty of any kind.
+Any violation terminates this license immediately.

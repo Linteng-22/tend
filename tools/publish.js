@@ -44,7 +44,8 @@ function countSealed(dir) {
   let n = 0;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (entry.isDirectory()) n += countSealed(path.join(dir, entry.name));
-    else n += 1;
+    // index.enc 是清单，不是工程文件，别算进去
+    else if (entry.name !== 'index.enc') n += 1;
   }
   return n;
 }

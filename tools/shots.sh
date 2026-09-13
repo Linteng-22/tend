@@ -170,8 +170,7 @@ shoot 10-memory --es route memory
 shoot 11-skills --es route skills
 shoot 12-account --es route account
 shoot 13-backup --es route backup
-shoot 14-security --es route security
-shoot 15-about --es route about
+shoot 14-about --es route about
 
 ls -l shots
 

@@ -94,7 +94,8 @@ jobs:
           disable-animations: true
           emulator-boot-timeout: 600
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 4096
-          script: bash tools/shots.sh android/app/build/outputs/apk/release/app-release.apk
+          # 模拟器是 x86_64，所以拍截图用的是同一份源码出的另一个架构包。
+          script: bash tools/shots.sh android/app/build/outputs/apk/release/app-x86_64-release.apk
 
       - name: Seal the shots
         env:

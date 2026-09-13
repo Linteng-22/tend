@@ -79,8 +79,10 @@ jobs:
         env:
           TEND_SOURCE_KEY: ${{ secrets.TEND_SOURCE_KEY }}
         run: |
+          # 按架构拆包之后，发给大家的是真机那一份（arm64-v8a）。
+          # 模拟器那一份不出这个流水线——它只在 android-shots 里拍截图用。
           node tools/tendpack.js seal-file \
-            --in android/app/build/outputs/apk/release/app-release.apk \
+            --in android/app/build/outputs/apk/release/app-arm64-v8a-release.apk \
             --out Tend.apk.enc
 
       - uses: actions/upload-artifact@v4

@@ -14,6 +14,8 @@ on:
 jobs:
   shots:
     runs-on: ubuntu-latest
+    # 卡住的时候自己结束，别占着跑者一直转。
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -74,6 +76,15 @@ jobs:
         working-directory: android
         run: gradle assembleRelease --no-daemon
 
+      # 模拟器要能访问 /dev/kvm 才起得来。这一步不做，它会一直卡在开机，
+      # adb 只会回一句 device offline——看起来像脚本坏了，其实是没有加速。
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
       - name: Take screenshots on an emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -81,7 +92,7 @@ jobs:
           arch: x86_64
           profile: pixel_6
           disable-animations: true
-          emulator-boot-timeout: 900
+          emulator-boot-timeout: 600
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 4096
           script: bash tools/shots.sh android/app/build/outputs/apk/release/app-release.apk
 

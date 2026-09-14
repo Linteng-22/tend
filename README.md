@@ -1,10 +1,15 @@
-# Tend
+<p align="center">
+  <img src="docs/icon.png" width="96" alt="Tend">
+</p>
 
-一个多模型 AI 助手。iPhone 和安卓各有一个原生客户端，接你自己配的 OpenAI 兼容接口。
+<h1 align="center">Tend</h1>
 
-检索、记忆、语音、离线音色都在手机上算。我们没有自己的服务器，电脑关不关机都一样。
+<p align="center">
+  一个多模型 AI 助手。iPhone 和安卓各有一个原生客户端，接你自己配的 OpenAI 兼容接口。<br>
+  检索、记忆、语音、离线音色都在手机上算。我们没有自己的服务器，电脑关不关机都一样。
+</p>
 
-**[下载最新版](../../releases/latest)**
+<p align="center">【<a href="../../releases/latest">下载最新版</a>】</p>
 
 ## 目录
 

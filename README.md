@@ -27,17 +27,8 @@
 ## 界面
 
 <p align="center">
-  <img src="docs/shots/02d-new-chat.png" width="24%" alt="新窗口">
-  <img src="docs/shots/01-chat.png" width="24%" alt="对话和推理过程">
-  <img src="docs/shots/02c-tool-trace.png" width="24%" alt="动过手的事记在消息下面">
-  <img src="docs/shots/02-drawer.png" width="24%" alt="会话列表">
-</p>
-
-<p align="center">
-  <img src="docs/shots/03-library.png" width="24%" alt="资料库">
-  <img src="docs/shots/04-memory.png" width="24%" alt="记忆">
-  <img src="docs/shots/06-settings.png" width="24%" alt="设置">
-  <img src="docs/shots/10-capability.png" width="24%" alt="能力">
+  <img src="docs/shots/01.jpg" width="32%" alt="Tend 界面">
+  <img src="docs/shots/02.jpg" width="32%" alt="Tend 界面">
 </p>
 
 界面刻意避开常见 AI App 的样子。没有渐变，没有闪光星星，没有机器人头像，也没有左右气泡。

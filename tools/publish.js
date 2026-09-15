@@ -58,5 +58,24 @@ const message = note
 
 run('git', ['add', '-A']);
 run('git', ['-c', 'core.quotepath=false', 'commit', '-m', message, '--allow-empty-message'], { stdio: 'pipe' });
-run('git', ['push']);
+// 密文要落在两家：GitHub 和 GitCode。
+//
+// 两边的网络路子恰恰相反：GitCode 在国内，挂代理反而绕；GitHub 在外面，不挂代理根本连不上。
+// 所以按地址决定这一趟要不要代理，不把它写死在哪一家上。
+function pushEverywhere() {
+  const remotes = execFileSync('git', ['remote'], { cwd: root })
+    .toString().trim().split('\n').map((s) => s.trim()).filter(Boolean);
+  if (remotes.length === 0) throw new Error('这个仓库没有 remote，没处推。');
+
+  for (const remote of remotes) {
+    const url = execFileSync('git', ['remote', 'get-url', remote], { cwd: root }).toString().trim();
+    const args = [];
+    if (url.includes('gitcode.com')) args.push('-c', 'http.proxy=', '-c', 'https.proxy=');
+    args.push('push', remote, 'main');
+    console.log('推到 ' + remote + '（' + url + '）…');
+    run('git', args);
+  }
+}
+
+pushEverywhere();
 console.log('推好了：' + out);

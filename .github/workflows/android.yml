@@ -31,10 +31,15 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
-
+      # 这里原来挂的是 android-actions/setup-android@v3。它每次都会先跑一遍 `sdkmanager tools`，
+      # 而 Google 把老的 tools 包下架了（2026-09-15 起），那一步必然报 Failed to find package 'tools'，
+      # 整条流水线就断在这儿——和工程本身没关系。
+      # runner 镜像本来就带着 Android SDK（/usr/local/lib/android/sdk），ANDROID_HOME 也是现成的，
+      # 所以直接用系统那一份，只补我们真正缺的 platform 和 build-tools。
       - name: Install SDK platforms
-        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0" > /dev/null
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager --install "platforms;android-35" "build-tools;35.0.0" "platform-tools" > /dev/null
 
       - uses: gradle/actions/setup-gradle@v4
         with:

@@ -38,8 +38,17 @@ jobs:
       # 所以直接用系统那一份，只补我们真正缺的 platform 和 build-tools。
       - name: Install SDK platforms
         run: |
-          yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager --install "platforms;android-35" "build-tools;35.0.0" "platform-tools" > /dev/null
+          # runner 镜像本来就带着 Android SDK，但它不在 PATH 上——以前是 setup-android 帮我们加进去的。
+          # cmdline-tools 那个目录名带着版本号（16.0），以后还会变，所以按通配找一遍。
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$(ls -d "$SDK"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)"
+          echo "sdkmanager: $SDKMANAGER"
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" --install "platforms;android-35" "build-tools;35.0.0" "platform-tools" > /dev/null
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          dirname "$SDKMANAGER" >> "$GITHUB_PATH"
 
       - uses: gradle/actions/setup-gradle@v4
         with:
